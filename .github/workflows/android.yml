@@ -56,11 +56,18 @@ jobs:
         working-directory: android
         run: chmod +x ./gradlew
 
+      # 分发包下载（经 github.com release 重定向）偶发 504，加三层重试兜底
       - name: 构建 Debug APK
         working-directory: android
         run: |
-          ./gradlew --no-daemon assembleDebug \
-            ${{ inputs.gateway != '' && format('-Pspeakmate.gateway={0}', inputs.gateway) || '' }}
+          ARGS=""
+          if [ -n "${{ inputs.gateway }}" ]; then ARGS="-Pspeakmate.gateway=${{ inputs.gateway }}"; fi
+          for i in 1 2 3; do
+            if ./gradlew --no-daemon assembleDebug $ARGS; then exit 0; fi
+            echo "第 $i 次尝试失败，10 秒后重试（多为 Gradle 分发包下载瞬时故障）"
+            sleep 10
+          done
+          exit 1
 
       # secrets 不能出现在 if 条件里，所以先在一个步骤里探测，
       # 把结果写成 output 供后续步骤判断。
@@ -88,7 +95,13 @@ jobs:
           SPEAKMATE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           SPEAKMATE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SPEAKMATE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew --no-daemon assembleRelease
+        run: |
+          for i in 1 2 3; do
+            if ./gradlew --no-daemon assembleRelease; then exit 0; fi
+            echo "第 $i 次尝试失败，10 秒后重试"
+            sleep 10
+          done
+          exit 1
 
       - name: 整理产物
         run: |
