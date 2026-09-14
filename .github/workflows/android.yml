@@ -121,18 +121,19 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+      # 用 gh CLI 而不是 action：两个工作流会同时往同一个 tag 的 Release 上传产物，
+      # 谁先跑到谁负责创建，另一个只上传（--clobber 允许覆盖同名文件）。
       - name: 发布到 GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: out/*.apk
-          generate_release_notes: true
-          body: |
-            ## 安装
-
-            下载 `*-release.apk` 安装即可（未配置签名密钥时文件名相同但为未签名包，
-            部分机型需先卸载旧版本）。
-
-            ## 首次使用
-
-            启动后输入运营方发放的兑换码激活，无需注册账号。
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          for i in 1 2 3 4 5; do
+            if gh release view "$TAG" >/dev/null 2>&1; then break; fi
+            if gh release create "$TAG" --title "SpeakMate $TAG" --notes-file docs/release-notes.md; then break; fi
+            echo "创建 Release 时遇到并发竞态，第 $i 次重试"
+            sleep 5
+          done
+          gh release upload "$TAG" out/* --clobber
+          gh release view "$TAG" --json assets -q '.assets[].name'
