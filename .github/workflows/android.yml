@@ -37,8 +37,8 @@ jobs:
       - name: 配置 Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # runner 自带的 cmdline-tools 版本较旧，其包索引里还没有 API 37，
-      # 先换成 dl.google.com 直链的最新版 cmdline-tools，再装 SDK 组件。
+      # runner 自带的 cmdline-tools 版本较旧，先换成 dl.google.com 直链的最新版。
+      # 注意：API 37 起平台包改用小数版本命名（platforms;android-37.0），不再叫 android-37。
       - name: 安装 Android SDK 组件
         run: |
           SDKROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
@@ -49,7 +49,7 @@ jobs:
           mv cmdline-tools "$SDKROOT/cmdline-tools/latest"
           SDKMANAGER="$SDKROOT/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses > /dev/null || true
-          yes | "$SDKMANAGER" "platforms;android-37" "build-tools;37.0.0" "platform-tools" > /dev/null
+          yes | "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" "platform-tools" > /dev/null
           echo "已安装：" && ls "$SDKROOT/platforms"
 
       - name: 赋予 gradlew 执行权限
