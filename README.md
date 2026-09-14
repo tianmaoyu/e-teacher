@@ -48,6 +48,7 @@ SpeakMate App ──wss──▶ nginx ──▶ speakmate-gateway ──▶ wss
 ├── server/                   计费网关（Node.js，唯一依赖 ws）
 │   ├── src/relay.js          核心：白名单 + 强制覆写 + 按秒计费 + 对账
 │   ├── src/wallet.js         整数微美元钱包与 append-only 流水
+│   ├── tools/mock-gateway.mjs 本地模拟网关：无 Key 也能跑通 App 全流程
 │   └── test/smoke.mjs        端到端冒烟（自带假上游，40 项断言）
 └── deploy/nginx/             反代配置（含 WSS 长连接与限流）
 ```
@@ -87,7 +88,26 @@ cd server && npm run smoke
 不需要真实 API Key —— 测试会起一个假的 GPT-Live 上游，覆盖鉴权、配置覆写、
 事件白名单、音频校验、按秒计费、`usage.seconds` 对账、兑换码与后台接口。
 
-### 4. 打包 App
+### 4. 在模拟器 / 手机上先看效果（不需要 Key）
+
+`server/tools/mock-gateway.mjs` 是一个零依赖的**模拟网关**，实现协议里 App 用到的那部分：
+兑换码、账户、翻译，以及一条会自己演下去的实时会话（带双语字幕、5 秒一次的计费心跳、结算单）。
+
+```bash
+cd server
+node tools/mock-gateway.mjs          # 默认 127.0.0.1:8099
+```
+
+然后在 App 里：
+
+1. 「设置 → 服务器」填 `http://127.0.0.1:8099` 并保存；
+2. 兑换码随便填（例如 `SM-DEMO-0001`）激活；
+3. 点「开始对话」——会看到老师说一句、你说一句的完整双语字幕与实时花费。
+
+iOS 模拟器可以直接在宿主机跑这个网关（模拟器与 Mac 共享网络）；Android 模拟器同理。
+真机调试时把地址换成 Mac 的局域网 IP，并确保手机与电脑同网段。
+
+### 5. 打包 App
 
 ```bash
 cd android
@@ -100,7 +120,7 @@ cd android
 
 装到手机上，输入兑换码激活即可开始对话。也可以直接推上 GitHub，由 Actions 出包。
 
-### 5. 打包 iOS App
+### 6. 打包 iOS App
 
 ```bash
 brew install xcodegen
