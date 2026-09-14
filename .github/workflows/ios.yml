@@ -1,0 +1,113 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      gateway:
+        description: "打包时注入的默认网关地址（留空则用源码默认值）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建 iOS 包
+    runs-on: macos-15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 显示工具链版本
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # 工程文件由 project.yml 生成，仓库里不存 .xcodeproj，避免 pbxproj 冲突
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: 构建模拟器包
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project SpeakMate.xcodeproj \
+            -scheme SpeakMate \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-sim \
+            CODE_SIGNING_ALLOWED=NO \
+            SPEAKMATE_GATEWAY="${{ inputs.gateway }}" \
+            build
+
+      # 未签名 IPA：用 AltStore / Sideloadly / Xcode 自行签名后即可安装。
+      # 仓库不持有任何开发者证书，公库也能安全构建。
+      - name: 构建未签名 IPA
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project SpeakMate.xcodeproj \
+            -scheme SpeakMate \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build-device \
+            -archivePath build-device/SpeakMate.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SPEAKMATE_GATEWAY="${{ inputs.gateway }}" \
+            archive
+          ls -R build-device/SpeakMate.xcarchive/Products
+
+      - name: 整理产物
+        run: |
+          mkdir -p out/Payload
+          APP="ios/build-device/SpeakMate.xcarchive/Products/Applications/SpeakMate.app"
+          cp -R "$APP" out/Payload/
+          (cd out && zip -qry SpeakMate-unsigned.ipa Payload)
+          ditto -c -k --sequesterRsrc --keepParent \
+            "ios/build-sim/build/Build/Products/Debug-iphonesimulator/SpeakMate.app" \
+            out/SpeakMate-simulator.zip
+          ls -lh out
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: speakmate-ios-${{ github.sha }}
+          path: out/*
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: 发布到 GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true
+          body: |
+            ## 安装（iOS）
+
+            - `SpeakMate-unsigned.ipa`：未签名包，用 AltStore / Sideloadly 或 Xcode 自签后安装。
+            - `SpeakMate-simulator.zip`：模拟器包，解压后拖入 iOS 模拟器即可运行。
+
+            ## 首次使用
+
+            启动后输入运营方发放的兑换码激活，无需注册账号。

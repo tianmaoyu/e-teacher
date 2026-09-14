@@ -1,6 +1,6 @@
 # SpeakMate · AI 英语口语教练
 
-> 一个能卖的英语口语 App。Android 原生 + 自建计费网关，语音层跑 OpenAI **GPT-Live-1** 全双工模型。
+> 一个能卖的英语口语 App。Android + iOS 双端原生 + 自建计费网关，语音层跑 OpenAI **GPT-Live-1** 全双工模型。
 
 ```
 SpeakMate App ──wss──▶ nginx ──▶ speakmate-gateway ──▶ wss://api.openai.com/v1/live/sessions
@@ -37,6 +37,14 @@ SpeakMate App ──wss──▶ nginx ──▶ speakmate-gateway ──▶ wss
 │       ├── session/LiveSessionClient.kt OkHttp WebSocket
 │       ├── data/GatewayApi.kt          兑换码 / 账户 / 翻译
 │       └── ui/                         激活页 / 通话页 / 设置页
+├── ios/                      iOS App（SwiftUI + AVAudioEngine）
+│   ├── project.yml           XcodeGen 工程描述（不提交 .xcodeproj）
+│   └── Sources/
+│       ├── Audio/VoiceAudioEngine.swift 采集 / 重采样 / 播放 / Voice Processing 回声消除
+│       ├── Session/AppModel.swift       会话中枢（与 Android 一一对应）
+│       ├── Session/LiveSocket.swift     URLSessionWebSocketTask
+│       ├── Core/GatewayAPI.swift        兑换码 / 账户 / 翻译
+│       └── UI/                          激活页 / 通话页 / 设置页
 ├── server/                   计费网关（Node.js，唯一依赖 ws）
 │   ├── src/relay.js          核心：白名单 + 强制覆写 + 按秒计费 + 对账
 │   ├── src/wallet.js         整数微美元钱包与 append-only 流水
@@ -92,6 +100,29 @@ cd android
 
 装到手机上，输入兑换码激活即可开始对话。也可以直接推上 GitHub，由 Actions 出包。
 
+### 5. 打包 iOS App
+
+```bash
+brew install xcodegen
+cd ios && xcodegen generate
+
+# 模拟器包（本机直接跑）
+xcodebuild -project SpeakMate.xcodeproj -scheme SpeakMate \
+  -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO build
+
+# 注入网关域名并出未签名 IPA
+xcodebuild -project SpeakMate.xcodeproj -scheme SpeakMate \
+  -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+  -archivePath build-device/SpeakMate.xcarchive \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+  SPEAKMATE_GATEWAY=wss://api.yourdomain.com archive
+```
+
+未签名 IPA 用 AltStore / Sideloadly / Xcode 自签后安装。要上架 App Store
+则需替换 `DEVELOPMENT_TEAM` 并配置签名证书。
+
 ---
 
 ## GitHub Actions
@@ -101,6 +132,15 @@ cd android
 | push 到 main / PR | 构建 debug + release，上传 artifact |
 | 打 `v*` tag | 额外把 APK 发到 GitHub Release |
 | 手动触发 | 可临时注入网关地址 |
+
+两个工作流：
+
+| 工作流 | 产物 |
+|---|---|
+| `android.yml` | `*-debug.apk`、`*-release.apk` |
+| `ios.yml` | `SpeakMate-unsigned.ipa`、`SpeakMate-simulator.zip` |
+
+iOS 侧不需要任何证书或 Secrets —— 出的是未签名包，公库也能安全构建。
 
 启用签名（可选）：仓库 Settings → Secrets 添加
 

@@ -3,6 +3,9 @@
 版本：`1`
 本文件是 App 与网关之间的**唯一接口契约**。任何一方改动必须先改这里。
 
+实现方：Android `session/SessionHub.kt`、iOS `ios/Sources/Session/AppModel.swift`。
+两端状态机、事件名、字幕切片与计费展示口径完全一致。
+
 ---
 
 ## 1. 传输
