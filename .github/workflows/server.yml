@@ -1,0 +1,51 @@
+name: Gateway CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: 语法检查与端到端冒烟
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 安装依赖
+        working-directory: server
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: 语法检查
+        working-directory: server
+        run: |
+          fail=0
+          for f in $(find src scripts test -type f \( -name '*.js' -o -name '*.mjs' \)); do
+            if ! node --check "$f"; then
+              echo "语法错误: $f"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # 冒烟测试会起一个假的 OpenAI 上游，把鉴权、强制覆写、按秒计费、
+      # 兑换码与后台接口整条链路跑一遍，不需要任何真实 Key。
+      - name: 端到端冒烟测试
+        working-directory: server
+        run: npm run smoke

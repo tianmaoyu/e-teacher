@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 左侧声波 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#63E6BE"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M30,44 A16,16 0 0 0 30,64" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FD1C5"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M22,36 A26,26 0 0 0 22,72" />
+
+    <!-- 右侧声波 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#63E6BE"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M78,44 A16,16 0 0 1 78,64" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FD1C5"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M86,36 A26,26 0 0 1 86,72" />
+
+    <!-- 麦克风 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30 m-10,0 a10,10 0 0 1 20,0 v18 a10,10 0 0 1 -20,0 z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M38,48 A16,16 0 0 0 70,48" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M54,64 L54,72" />
+</vector>

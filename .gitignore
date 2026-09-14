@@ -1,0 +1,39 @@
+# ---------------- Android ----------------
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/.idea/
+android/*.iml
+android/captures/
+android/.kotlin/
+
+# 构建产物
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# 签名文件：绝不入库
+*.jks
+*.keystore
+keystore.properties
+
+# ---------------- 服务端 ----------------
+server/node_modules/
+server/data/
+server/.env
+server/*.log
+npm-debug.log*
+
+# ---------------- 通用 ----------------
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# 卡密 / 密钥等运营材料
+secrets/
+codes.txt
+*.pem

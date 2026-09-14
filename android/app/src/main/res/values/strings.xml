@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpeakMate</string>
+    <string name="notif_channel_name">通话中</string>
+    <string name="notif_channel_desc">保持口语练习会话在后台运行</string>
+    <string name="notif_title">SpeakMate 正在练习</string>
+    <string name="notif_action_end">结束会话</string>
+</resources>

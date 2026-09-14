@@ -1,0 +1,21 @@
+{
+  "name": "speakmate-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SpeakMate 计费网关：GPT-Live-1 语音会话鉴权、按秒计费与透明代理",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "gen-codes": "node scripts/gen-codes.js",
+    "create-account": "node scripts/create-account.js",
+    "smoke": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
