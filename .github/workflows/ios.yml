@@ -79,13 +79,20 @@ jobs:
 
       - name: 整理产物
         run: |
+          set -euo pipefail
           mkdir -p out/Payload
           APP="ios/build-device/SpeakMate.xcarchive/Products/Applications/SpeakMate.app"
           cp -R "$APP" out/Payload/
           (cd out && zip -qry SpeakMate-unsigned.ipa Payload)
-          ditto -c -k --sequesterRsrc --keepParent \
-            "ios/build-sim/build/Build/Products/Debug-iphonesimulator/SpeakMate.app" \
-            out/SpeakMate-simulator.zip
+
+          # 路径随 Xcode 版本略有差异，找不到就全局搜一次
+          SIM_APP="ios/build-sim/Build/Products/Debug-iphonesimulator/SpeakMate.app"
+          if [ ! -d "$SIM_APP" ]; then
+            SIM_APP="$(find ios/build-sim -type d -name 'SpeakMate.app' | head -1)"
+          fi
+          echo "模拟器包：$SIM_APP"
+          test -d "$SIM_APP"
+          ditto -c -k --sequesterRsrc --keepParent "$SIM_APP" out/SpeakMate-simulator.zip
           ls -lh out
 
       - name: 上传产物
