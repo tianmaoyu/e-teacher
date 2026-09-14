@@ -28,21 +28,29 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装 JDK 17
+      - name: 安装 JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: 配置 Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # 运行镜像自带的 SDK 不一定含 API 37，显式装上，避免依赖自动下载
+      # runner 自带的 cmdline-tools 版本较旧，其包索引里还没有 API 37，
+      # 先换成 dl.google.com 直链的最新版 cmdline-tools，再装 SDK 组件。
       - name: 安装 Android SDK 组件
         run: |
-          SDKMANAGER="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          SDKROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          cd "$RUNNER_TEMP"
+          curl -sSLo cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+          unzip -q -o cmdtools.zip
+          rm -rf "$SDKROOT/cmdline-tools/latest"
+          mv cmdline-tools "$SDKROOT/cmdline-tools/latest"
+          SDKMANAGER="$SDKROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
           yes | "$SDKMANAGER" "platforms;android-37" "build-tools;37.0.0" "platform-tools" > /dev/null
-          echo "已安装：" && ls "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/platforms"
+          echo "已安装：" && ls "$SDKROOT/platforms"
 
       - name: 赋予 gradlew 执行权限
         working-directory: android
